@@ -36,7 +36,7 @@ Param(
 $RequestBody = $WebhookData.RequestBody | ConvertFrom-Json
 $Data = $RequestBody.data
 
-if($Data.operationName -match "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE")
+if($Data.operationName -match "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE" -And $Data.status -match "Succeeded")
 {
     # Authenticate to Azure
     $ServicePrincipalConnection = Get-AutomationConnection -Name "AzureRunAsConnection"
@@ -60,13 +60,32 @@ if($Data.operationName -match "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE")
         if ($nsg.Location -eq $networkwatcher.Location) {
             $fl_status = Get-AzureRmNetworkWatcherFlowLogStatus -NetworkWatcher $NW -TargetResourceId $nsg.Id
             if ( ! ($fl_status.Enabled)) {
+
+                # this is where we enable the logging
+                $logging = "not logging"
+                #first of all getting the blob account
+                $found=$false
+                $blob_name_start=($subby -split "-")[0]
+                foreach ($store in Get-AzureRmStorageAccount -ResourceGroupName NetworkWatcherRG) {
+                    # looking for blobs in the NetworkWatcherRG group and making sure they are the right odd-named-ones
+                    if ($store.Location -eq $nsg.Location -And $store.name.StartsWtih($blob_name_start)) {
+                        # that match the location of the NSG
+                        $found=$store
+                    }
+                }
+
+                if ($found) {
+                    Set-AzureRmNetworkWatcherConfigFlowLog -NetworkWatcher $networkwatcher -TargetResourceId $nsg.Id -EnableFlowLog $true -StorageAccountId $found.Id
+                    $logging = "logging to $($found.Id)"
+                }
+
                 if (!([string]::IsNullOrEmpty($ChannelURL)))
                     {
                         $TargetURL = "https://portal.azure.com/#resource" + $Data.resourceUri + "/overview"   
                         
                         $Body = ConvertTo-Json -Depth 4 @{
                         title = 'NSG Creation notification' 
-                        text = 'NSG was created, but is not getting logged.'
+                        text = "NSG was created, $($logging)"
                         sections = @(
                             @{
                             activityTitle = 'Azure NSG'
