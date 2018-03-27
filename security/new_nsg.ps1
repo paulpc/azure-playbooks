@@ -66,6 +66,7 @@ if($Data.operationName -match "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE" -A
                 #first of all getting the blob account
                 $found=$false
                 $blob_name_start=($subby -split "-")[0]
+
                 foreach ($store in Get-AzureRmStorageAccount -ResourceGroupName NetworkWatcherRG) {
                     # looking for blobs in the NetworkWatcherRG group and making sure they are the right odd-named-ones
                     if ($store.Location -eq $nsg.Location -And $store.name.StartsWtih($blob_name_start)) {
@@ -74,6 +75,7 @@ if($Data.operationName -match "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE" -A
                     }
                 }
 
+                # if we found one, we can set it
                 if ($found) {
                     Set-AzureRmNetworkWatcherConfigFlowLog -NetworkWatcher $networkwatcher -TargetResourceId $nsg.Id -EnableFlowLog $true -StorageAccountId $found.Id
                     $logging = "logging to $($found.Id)"
