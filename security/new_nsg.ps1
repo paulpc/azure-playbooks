@@ -36,7 +36,7 @@ Param(
 $RequestBody = $WebhookData.RequestBody | ConvertFrom-Json
 $Data = $RequestBody.data
 
-if($Data.operationName -match "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE" -And $Data.status -match "Succeeded")
+if($Data.operationName -match "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE")
 {
     # Authenticate to Azure
     $ServicePrincipalConnection = Get-AutomationConnection -Name "AzureRunAsConnection"
@@ -87,7 +87,7 @@ if($Data.operationName -match "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE" -A
                         
                         $Body = ConvertTo-Json -Depth 4 @{
                         title = 'NSG Creation notification' 
-                        text = "NSG was created, $($logging)"
+                        text = 'NSG was created, but is not getting logged.'
                         sections = @(
                             @{
                             activityTitle = 'Azure NSG'
