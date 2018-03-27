@@ -91,16 +91,5 @@ if($Data.operationName -match "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE")
         }
     }
 
-    {
-       
-        #Post to teams if the channel webhook is present.   
-        
-}
-else
-{
-    Write-Error "Could not find VM write event"
-}
-
-
 
  
